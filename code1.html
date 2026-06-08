@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Assistant Studio</title>
+    <!-- Tailwind CSS for sleek styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome for clean icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-gray-900 text-gray-100 font-sans h-screen flex overflow-hidden">
+
+    <!-- SIDEBAR: Features & Settings -->
+    <div class="w-80 bg-gray-950 border-r border-gray-800 flex flex-col justify-between p-4 hidden md:flex">
+        <div>
+            <div class="flex items-center gap-3 mb-8 px-2">
+                <div class="bg-blue-600 h-9 w-9 rounded-xl flex items-center justify-center text-white shadow-lg shadow-blue-500/30">
+                    <i class="fa-solid fa-robot text-lg"></i>
+                </div>
+                <h1 class="font-bold text-xl tracking-wide bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent">Gemini Companion</h1>
+            </div>
+
+            <!-- Features List -->
+            <div class="space-y-4">
+                <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider px-2">Built-in Features</p>
+                <div class="flex items-center gap-3 p-3 bg-gray-900 rounded-xl border border-gray-800">
+                    <i class="fa-solid fa-brain text-blue-400"></i>
+                    <div>
+                        <p class="text-sm font-medium">Deep Understanding</p>
+                        <p class="text-xs text-gray-400">Empathetic & supportive tone</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-3 p-3 bg-gray-900 rounded-xl border border-gray-800">
+                    <i class="fa-solid fa-wand-magic-sparkles text-indigo-400"></i>
+                    <div>
+                        <p class="text-sm font-medium">Adaptive Persona</p>
+                        <p class="text-xs text-gray-400">Balances wit with clarity</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-3 p-3 bg-gray-900 rounded-xl border border-gray-800">
+                    <i class="fa-solid fa-bolt text-amber-400"></i>
+                    <div>
+                        <p class="text-sm font-medium">Real-time Streaming</p>
+                        <p class="text-xs text-gray-400">Fast, dynamic responses</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- API Configuration (Stored locally in user's browser) -->
+        <div class="border-t border-gray-800 pt-4">
+            <label class="block text-xs font-semibold text-gray-400 uppercase mb-2">Gemini API Key</label>
+            <div class="relative">
+                <input type="password" id="apiKeyInput" placeholder="AIzaSy..." class="w-full bg-gray-900 border border-gray-800 rounded-xl px-3 py-2 text-sm text-gray-200 focus:outline-none focus:border-blue-500 pr-10">
+                <button onclick="toggleKeyVisibility()" class="absolute right-3 top-2.5 text-gray-500 hover:text-gray-300">
+                    <i id="eyeIcon" class="fa-solid fa-eye"></i>
+                </button>
+            </div>
+            <p class="text-[10px] text-gray-500 mt-2">Your key is saved locally in your browser and never shared.</p>
+        </div>
+    </div>
+
+    <!-- MAIN CHAT INTERFACE -->
+    <div class="flex-1 flex flex-col h-full bg-gray-900">
+        <!-- Top Navbar -->
+        <header class="h-16 border-b border-gray-800 flex items-center justify-between px-6 bg-gray-900/50 backdrop-blur-md">
+            <div class="flex items-center gap-3">
+                <div class="h-2.5 w-2.5 rounded-full bg-emerald-500 animate-pulse"></div>
+                <span class="text-sm font-medium text-gray-300">Assistant Active</span>
+            </div>
+            <button onclick="clearChat()" class="text-sm text-gray-400 hover:text-red-400 transition flex items-center gap-2">
+                <i class="fa-solid fa-trash-can"></i> Clear Chat
+            </button>
+        </header>
+
+        <!-- Chat History Window -->
+        <div id="chatWindow" class="flex-1 overflow-y-auto p-6 space-y-6 scrollbar-thin scrollbar-thumb-gray-800">
+            <!-- Welcome Message -->
+            <div class="flex gap-4 max-w-3xl mx-auto items-start">
+                <div class="bg-blue-600 h-8 w-8 rounded-lg flex items-center justify-center flex-shrink-0 text-white">
+                    <i class="fa-solid fa-robot text-sm"></i>
+                </div>
+                <div class="space-y-1">
+                    <p class="text-xs font-semibold text-gray-400">Assistant</p>
+                    <div class="text-gray-200 leading-relaxed bg-gray-800/40 p-4 rounded-2xl rounded-tl-none border border-gray-800">
+                        Hey there! I'm your AI assistant. I'm configured to talk, coach, and adapt just like Gemini. To get started, make sure to paste your Gemini API key into the sidebar! How can I help you today?
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Chat Input Area -->
+        <div class="p-4 border-t border-gray-800 bg-gray-950/50">
+            <div class="max-w-3xl mx-auto relative flex items-center">
+                <textarea id="userInput" rows="1" placeholder="Ask me anything..." class="w-full bg-gray-900 border border-gray-800 rounded-2xl pl-4 pr-12 py-3 text-gray-200 placeholder-gray-500 focus:outline-none focus:border-blue-500 resize-none max-h-32 overflow-y-auto" onkeydown="handleKeyPress(event)"></textarea>
+                <button id="sendBtn" onclick="sendMessage()" class="absolute right-2 p-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl transition duration-200 flex items-center justify-center h-9 w-9 disabled:opacity-50 disabled:hover:bg-blue-600">
+                    <i class="fa-solid fa-paper-plane text-sm"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ES Module Script to pull Google Gen AI SDK directly -->
+    <script type="module">
+        import { GoogleGenAI } from "https://esm.run/@google/genai";
+
+        // Global state
+        let ai = null;
+        let chatSession = null;
+
+        // System instructions to give it your specific personality traits
+        const systemInstruction = `
+            You are an authentic, adaptive AI collaborator with a touch of wit. 
+            Your goal is to address the user's true intent with insightful, yet clear and concise responses. 
+            Balance empathy with candor: validate the user's feelings authentically as a supportive, grounded AI, 
+            while correcting significant misinformation gently yet directly—like a helpful peer, not a rigid lecturer. 
+            Subtly adapt your tone, energy, and humor to the user's style. Keep formatting clean and highly scannable using markdown.
+        `;
+
+        // Initialize connection when API key changes
+        function initAI() {
+            const apiKey = document.getElementById('apiKeyInput').value.trim();
+            if (!apiKey) return null;
+
+            localStorage.setItem('gemini_api_key', apiKey);
+
+            ai = new GoogleGenAI({ apiKey: apiKey });
+
+            const chatCreator = ai.chats?.create ? ai.chats : ai.chat?.create ? ai.chat : null;
+            if (!chatCreator) {
+                console.warn('Unsupported Gemini SDK chat API shape.');
+                return null;
+            }
+
+            chatSession = typeof chatCreator.create === 'function'
+                ? chatCreator.create({
+                      model: 'gemini-2.5-flash',
+                      config: {
+                          systemInstruction: systemInstruction,
+                          temperature: 0.7
+                      }
+                  })
+                : chatCreator({
+                      model: 'gemini-2.5-flash',
+                      config: {
+                          systemInstruction: systemInstruction,
+                          temperature: 0.7
+                      }
+                  });
+        }
+
+        // Send message function accessible globally
+        window.sendMessage = async function() {
+            const inputEl = document.getElementById('userInput');
+            const message = inputEl.value.trim();
+            if (!message) return;
+
+            if (!chatSession) initAI();
+            if (!chatSession) {
+                alert("Please enter a valid Gemini API Key in the sidebar first!");
+                return;
+            }
+
+            // Append User Message to UI
+            appendMessage('User', message, 'user');
+            inputEl.value = '';
+            adjustTextAreaHeight(inputEl);
+
+            // Create Placeholder for AI Streaming Response
+            const aiMessageId = appendMessage('Assistant', '<span class="animate-pulse">Thinking...</span>', 'ai');
+            const aiMessageEl = document.getElementById(aiMessageId).querySelector('.chat-text');
+            
+            try {
+                aiMessageEl.innerHTML = ''; // Clear thinking state
+
+                if (typeof chatSession.sendMessageStream === 'function') {
+                    const responseStream = await chatSession.sendMessageStream({ message: message });
+                    let fullText = '';
+                    for await (const chunk of responseStream) {
+                        fullText += chunk.text ?? chunk;
+                        aiMessageEl.innerHTML = fullText.replace(/\n/g, '<br>');
+                        scrollToBottom();
+                    }
+                } else if (typeof chatSession.sendMessage === 'function') {
+                    const response = await chatSession.sendMessage({ message: message });
+                    const text = response?.text ?? response?.content ?? response?.outputText ?? JSON.stringify(response);
+                    aiMessageEl.innerHTML = String(text).replace(/\n/g, '<br>');
+                    scrollToBottom();
+                } else {
+                    throw new Error('Unsupported chat session API');
+                }
+            } catch (error) {
+                console.error(error);
+                aiMessageEl.innerHTML = `<span class="text-red-400"><i class="fa-solid fa-triangle-exclamation"></i> Error: Unable to fetch response. Check your API key.</span>`;
+            }
+        }
+
+        // Load saved API Key on startup
+        window.addEventListener('DOMContentLoaded', () => {
+            const savedKey = localStorage.getItem('gemini_api_key');
+            if (savedKey) {
+                document.getElementById('apiKeyInput').value = savedKey;
+                initAI();
+            }
+        });
+
+        // Event listener for updating API keys live
+        document.getElementById('apiKeyInput').addEventListener('input', initAI);
+    </script>
+
+    <!-- UI Interaction Helper Scripts -->
+    <script>
+        function appendMessage(sender, text, type) {
+            const chatWindow = document.getElementById('chatWindow');
+            const id = 'msg-' + Date.now();
+            
+            const isUser = type === 'user';
+            const avatarHtml = isUser 
+                ? `<div class="bg-gray-700 h-8 w-8 rounded-lg flex items-center justify-center flex-shrink-0 text-white"><i class="fa-solid fa-user text-sm"></i></div>`
+                : `<div class="bg-blue-600 h-8 w-8 rounded-lg flex items-center justify-center flex-shrink-0 text-white"><i class="fa-solid fa-robot text-sm"></i></div>`;
+
+            const messageHtml = `
+                <div id="${id}" class="flex gap-4 max-w-3xl mx-auto items-start ${isUser ? 'flex-row-reverse' : ''}">
+                    ${avatarHtml}
+                    <div class="space-y-1 ${isUser ? 'text-right' : ''}">
+                        <p class="text-xs font-semibold text-gray-400">${sender}</p>
+                        <div class="chat-text text-gray-200 leading-relaxed p-4 rounded-2xl border ${isUser ? 'bg-blue-600/10 border-blue-500/30 rounded-tr-none text-left' : 'bg-gray-800/40 border-gray-800 rounded-tl-none'}">
+                            ${text}
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            chatWindow.insertAdjacentHTML('beforeend', messageHtml);
+            scrollToBottom();
+            return id;
+        }
+
+        function scrollToBottom() {
+            const chatWindow = document.getElementById('chatWindow');
+            chatWindow.scrollTop = chatWindow.scrollHeight;
+        }
+
+        function handleKeyPress(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+            adjustTextAreaHeight(e.target);
+        }
+
+        function adjustTextAreaHeight(el) {
+            el.style.height = 'auto';
+            el.style.height = el.scrollHeight + 'px';
+        }
+
+        function toggleKeyVisibility() {
+            const input = document.getElementById('apiKeyInput');
+            const icon = document.getElementById('eyeIcon');
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.className = 'fa-solid fa-eye-slash';
+            } else {
+                input.type = 'password';
+                icon.className = 'fa-solid fa-eye';
+            }
+        }
+
+        function clearChat() {
+            const chatWindow = document.getElementById('chatWindow');
+            // Keep only the welcome message
+            chatWindow.innerHTML = `
+                <div class="flex gap-4 max-w-3xl mx-auto items-start">
+                    <div class="bg-blue-600 h-8 w-8 rounded-lg flex items-center justify-center flex-shrink-0 text-white">
+                        <i class="fa-solid fa-robot text-sm"></i>
+                    </div>
+                    <div class="space-y-1">
+                        <p class="text-xs font-semibold text-gray-400">Assistant</p>
+                        <div class="text-gray-200 leading-relaxed bg-gray-800/40 p-4 rounded-2xl rounded-tl-none border border-gray-800">
+                            Chat history cleared! What are we working on next?
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+    </script>
+</body>
+</html>
